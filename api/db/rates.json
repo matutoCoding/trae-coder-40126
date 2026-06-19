@@ -1,0 +1,99 @@
+[
+  {
+    "id": "rate_morning_peak",
+    "name": "早高峰",
+    "color": "#F97316",
+    "multiplier": 1.3,
+    "timeRanges": [
+      {
+        "start": "07:00",
+        "end": "09:00"
+      }
+    ],
+    "applicableWeekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "priority": 10,
+    "description": "工作日清晨黄金时段"
+  },
+  {
+    "id": "rate_peak",
+    "name": "晚高峰",
+    "color": "#EF4444",
+    "multiplier": 1.5,
+    "timeRanges": [
+      {
+        "start": "17:00",
+        "end": "20:00"
+      }
+    ],
+    "applicableWeekdays": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "priority": 20,
+    "description": "下班后热门训练时段"
+  },
+  {
+    "id": "rate_night",
+    "name": "夜间档",
+    "color": "#8B5CF6",
+    "multiplier": 1.8,
+    "timeRanges": [
+      {
+        "start": "20:00",
+        "end": "22:00"
+      }
+    ],
+    "applicableWeekdays": [],
+    "priority": 30,
+    "description": "夜间特殊时段额外费用"
+  },
+  {
+    "id": "rate_weekend",
+    "name": "周末平峰",
+    "color": "#10B981",
+    "multiplier": 1.2,
+    "timeRanges": [
+      {
+        "start": "09:00",
+        "end": "17:00"
+      }
+    ],
+    "applicableWeekdays": [
+      0,
+      6
+    ],
+    "priority": 5,
+    "description": "周末白天基础档"
+  },
+  {
+    "id": "rate_normal",
+    "name": "平峰",
+    "color": "#3B82F6",
+    "multiplier": 1,
+    "timeRanges": [
+      {
+        "start": "09:00",
+        "end": "17:00"
+      }
+    ],
+    "applicableWeekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "priority": 0,
+    "description": "工作日常规时段基础价"
+  }
+]

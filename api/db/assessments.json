@@ -1,0 +1,32 @@
+[
+  {
+    "id": "assess_001",
+    "bookingId": "booking_001",
+    "trainerId": "trainer_001",
+    "petName": "豆豆",
+    "score": 4,
+    "tags": [
+      "注意力集中",
+      "进步明显",
+      "服从性好"
+    ],
+    "notes": "宠物今日状态极佳，对指令响应迅速，连续完成了坐、卧、等待三项基础动作。回家后可加强等待练习。",
+    "recommendations": "建议增加日常遛弯时长，消耗多余精力后训练效果更佳。",
+    "createdAt": "2026-06-20T05:00:00.000Z"
+  },
+  {
+    "id": "assess_002",
+    "bookingId": "booking_008",
+    "trainerId": "trainer_004",
+    "petName": "虎子",
+    "score": 5,
+    "tags": [
+      "社交需加强",
+      "情绪稳定",
+      "基础扎实"
+    ],
+    "notes": "初步接触脱敏训练，对陌生环境的适应度提升明显，但遇到大型犬时仍有紧张情绪。",
+    "recommendations": "下一阶段推荐进阶服从课，强化干扰环境下的指令稳定性。",
+    "createdAt": "2026-06-20T06:00:00.000Z"
+  }
+]

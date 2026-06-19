@@ -1,0 +1,402 @@
+[
+  {
+    "id": "trainer_001",
+    "name": "陈老师",
+    "specialties": [
+      "基础服从",
+      "行为纠正",
+      "幼犬启蒙"
+    ],
+    "experienceYears": 8,
+    "baseHourlyRate": 300,
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "22:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "13:00",
+          "end": "21:00"
+        }
+      ],
+      "sunday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "19:00"
+        }
+      ],
+      "exceptions": []
+    }
+  },
+  {
+    "id": "trainer_002",
+    "name": "林老师",
+    "specialties": [
+      "敏捷训练",
+      "飞盘狗",
+      "运动犬"
+    ],
+    "experienceYears": 6,
+    "baseHourlyRate": 280,
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "22:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "10:00",
+          "end": "18:00"
+        }
+      ],
+      "sunday": [
+        {
+          "start": "09:00",
+          "end": "17:00"
+        }
+      ],
+      "exceptions": []
+    }
+  },
+  {
+    "id": "trainer_003",
+    "name": "王老师",
+    "specialties": [
+      "猫咪行为",
+      "家庭礼仪",
+      "脱敏训练"
+    ],
+    "experienceYears": 5,
+    "baseHourlyRate": 260,
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "22:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "13:00",
+          "end": "21:00"
+        }
+      ],
+      "sunday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "19:00"
+        }
+      ],
+      "exceptions": []
+    }
+  },
+  {
+    "id": "trainer_004",
+    "name": "赵老师",
+    "specialties": [
+      "护卫犬",
+      "高级服从",
+      "工作犬训练"
+    ],
+    "experienceYears": 12,
+    "baseHourlyRate": 400,
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "22:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "13:00",
+          "end": "21:00"
+        }
+      ],
+      "sunday": [],
+      "exceptions": []
+    }
+  },
+  {
+    "id": "trainer_005",
+    "name": "Sarah老师",
+    "specialties": [
+      "响片训练",
+      "正向强化",
+      "竞技犬"
+    ],
+    "experienceYears": 7,
+    "baseHourlyRate": 350,
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "21:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "22:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "13:00",
+          "end": "21:00"
+        }
+      ],
+      "sunday": [
+        {
+          "start": "08:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "19:00"
+        }
+      ],
+      "exceptions": []
+    }
+  }
+]
