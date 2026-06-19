@@ -111,7 +111,11 @@ export default function BookingList() {
   const handleComplete = async (booking: Booking) => {
     const ok = await completeBooking(booking.id);
     if (ok) {
-      showToast('success', `预约已标记完成：${booking.petName}`);
+      showToast('success', `预约已标记完成：${booking.petName}，即将跳转评估…`);
+      await fetchBookings();
+      setTimeout(() => {
+        navigate(`/assessments/new?bookingId=${booking.id}`);
+      }, 1000);
     } else {
       showToast('error', '操作失败，请重试');
     }

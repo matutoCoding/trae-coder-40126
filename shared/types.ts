@@ -102,6 +102,7 @@ export interface ConflictResult {
   hasConflict: boolean;
   conflictingBookings?: Booking[];
   message?: string;
+  workRanges?: { start: string; end: string }[];
 }
 
 export type WeekdayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';

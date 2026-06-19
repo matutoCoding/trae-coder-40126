@@ -151,7 +151,26 @@ export class RateService {
     return rateRepo.findAll().sort((a, b) => a.priority - b.priority);
   }
 
+  validateTiers(tiers: RateTier[]): { valid: boolean; message?: string } {
+    if (!tiers || tiers.length === 0) {
+      return { valid: false, message: '至少需要保留一个费率档位' };
+    }
+    const hasDefaultOrFallback = tiers.some(t =>
+      t.priority === 0 ||
+      (t.applicableWeekdays.length === 0 &&
+        t.timeRanges.some(r => r.start <= '00:00' && r.end >= '23:59'))
+    );
+    if (!hasDefaultOrFallback && tiers.length < 2) {
+      return { valid: false, message: '请至少保留一个默认档（优先级0）或覆盖全天的档位' };
+    }
+    return { valid: true };
+  }
+
   bulkUpdate(tiers: RateTier[]) {
+    const validation = this.validateTiers(tiers);
+    if (!validation.valid) {
+      throw new Error(validation.message);
+    }
     rateRepo.bulkReplace(tiers);
     return this.list();
   }

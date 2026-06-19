@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store/app';
 import { Booking, Trainer } from '@shared/types';
 import { formatDateTime, generateId } from '@shared/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Star,
@@ -47,7 +47,9 @@ export default function AssessmentNew() {
   const trainers = useAppStore(s => s.trainers);
   const createAssessment = useAppStore(s => s.createAssessment);
   const fetchBookings = useAppStore(s => s.fetchBookings);
+  const fetchTrainers = useAppStore(s => s.fetchTrainers);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [bookingId, setBookingId] = useState<string>('');
   const [trainerId, setTrainerId] = useState<string>('');
@@ -61,8 +63,19 @@ export default function AssessmentNew() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
+    Promise.all([fetchBookings(), fetchTrainers()]);
+  }, [fetchBookings, fetchTrainers]);
+
+  useEffect(() => {
+    const bid = searchParams.get('bookingId');
+    if (bid && bookings.length > 0 && !bookingId) {
+      const match = bookings.find((b: Booking) => b.id === bid);
+      if (match) {
+        setBookingId(bid);
+        setTrainerId(match.trainerId);
+      }
+    }
+  }, [searchParams, bookings, bookingId]);
 
   const selectedBooking = useMemo(
     () => bookings.find((b: Booking) => b.id === bookingId),

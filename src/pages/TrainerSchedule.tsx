@@ -69,6 +69,7 @@ export default function TrainerSchedule() {
   const navigate = useNavigate();
   const trainers = useAppStore(s => s.trainers);
   const updateTrainer = useAppStore(s => s.updateTrainer);
+  const fetchTrainers = useAppStore(s => s.fetchTrainers);
 
   const trainer = useMemo(() => trainers.find(t => t.id === id), [trainers, id]);
 
@@ -220,6 +221,7 @@ export default function TrainerSchedule() {
     const ok = await updateTrainer(trainer.id, { workSchedule: schedule });
     setSaving(false);
     if (ok) {
+      await fetchTrainers();
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
     }

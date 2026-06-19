@@ -64,6 +64,7 @@ export default function RateConfig() {
   const [newTier, setNewTier] = useState<EditingTier>(createEmptyTier());
   const [savingAll, setSavingAll] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     fetchRates();
@@ -97,8 +98,39 @@ export default function RateConfig() {
     }
   };
 
+  const validateBeforeSave = (tiers: RateTier[]): string => {
+    if (!tiers || tiers.length === 0) {
+      return '至少需要保留一个费率档位';
+    }
+    const hasDefault = tiers.some(t => t.priority === 0);
+    if (!hasDefault) {
+      return '请至少保留一个优先级为 0 的默认档位';
+    }
+    for (const t of tiers) {
+      if (!t.name?.trim()) {
+        return '所有档位必须填写名称';
+      }
+      if (!t.timeRanges || t.timeRanges.length === 0) {
+        return `档位「${t.name}」必须至少设置一个时段`;
+      }
+      for (const r of t.timeRanges) {
+        if (r.start >= r.end) {
+          return `档位「${t.name}」存在无效时段（${r.start}-${r.end}）`;
+        }
+      }
+    }
+    return '';
+  };
+
   const deleteTier = async (id: string) => {
     const allTiers = rates.filter(r => r.id !== id);
+    const err = validateBeforeSave(allTiers);
+    if (err) {
+      setSaveError(err);
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    setSaveError('');
     await saveRates(allTiers);
   };
 
@@ -167,6 +199,13 @@ export default function RateConfig() {
       description: newTier.description,
     };
     const allTiers = [...rates, newRateTier];
+    const err = validateBeforeSave(allTiers);
+    if (err) {
+      setSaveError(err);
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    setSaveError('');
     const ok = await saveRates(allTiers);
     if (ok) {
       setShowNewTier(false);
@@ -176,6 +215,7 @@ export default function RateConfig() {
 
   const handleSaveAll = async () => {
     setSavingAll(true);
+    setSaveError('');
     const finalTiers: RateTier[] = rates.map(r => {
       const editing = editingMap[r.id];
       return editing ? ({ ...editing, id: r.id } as RateTier) : r;
@@ -191,6 +231,13 @@ export default function RateConfig() {
         priority: newTier.priority,
         description: newTier.description,
       });
+    }
+    const err = validateBeforeSave(finalTiers);
+    if (err) {
+      setSaveError(err);
+      setSavingAll(false);
+      setTimeout(() => setSaveError(''), 4000);
+      return;
     }
     const ok = await saveRates(finalTiers);
     setSavingAll(false);
@@ -663,6 +710,12 @@ export default function RateConfig() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {saveError && (
+                <span className="chip bg-red-50 text-red-600 border border-red-200 animate-fade-up">
+                  <AlertCircle size={12} className="mr-1" />
+                  {saveError}
+                </span>
+              )}
               {saveSuccess && (
                 <span className="chip bg-forest-50 text-forest-600 border border-forest-100 animate-fade-up">
                   <CheckCircle2 size={12} className="mr-1" />

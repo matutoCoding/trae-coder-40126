@@ -398,5 +398,93 @@
       ],
       "exceptions": []
     }
+  },
+  {
+    "name": "测试训练师A",
+    "specialties": [
+      "基础服从"
+    ],
+    "experienceYears": 3,
+    "baseHourlyRate": 180,
+    "id": "trainer_mqlfox0edgqn7c"
+  },
+  {
+    "name": "测试训练师B",
+    "specialties": [
+      "行为矫正"
+    ],
+    "experienceYears": 5,
+    "baseHourlyRate": 200,
+    "id": "trainer_mqlfze0warwlo7"
+  },
+  {
+    "status": "active",
+    "workSchedule": {
+      "monday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00"
+        }
+      ],
+      "thursday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00"
+        }
+      ],
+      "friday": [
+        {
+          "start": "09:00",
+          "end": "12:00"
+        },
+        {
+          "start": "14:00",
+          "end": "18:00"
+        }
+      ],
+      "saturday": [
+        {
+          "start": "10:00",
+          "end": "16:00"
+        }
+      ],
+      "sunday": [],
+      "exceptions": []
+    },
+    "name": "测试训练师C",
+    "specialties": [
+      "敏捷训练"
+    ],
+    "experienceYears": 2,
+    "baseHourlyRate": 160,
+    "id": "trainer_mqlge76yeeby7z"
   }
 ]

@@ -144,6 +144,7 @@ export default function TrainerList() {
           baseHourlyRate: form.baseHourlyRate,
         });
         if (ok) {
+          await fetchTrainers();
           setModalOpen(false);
         } else {
           setFormError('更新失败，请重试');
@@ -157,6 +158,7 @@ export default function TrainerList() {
           workSchedule: DEFAULT_WORK_SCHEDULE,
         });
         if (result.success) {
+          await fetchTrainers();
           setModalOpen(false);
         } else {
           setFormError(result.message || '创建失败，请重试');
@@ -170,6 +172,7 @@ export default function TrainerList() {
   const handleDeactivate = async (trainer: Trainer) => {
     const ok = await deactivateTrainer(trainer.id);
     if (ok) {
+      await fetchTrainers();
       setDeactivateConfirm(null);
     }
   };

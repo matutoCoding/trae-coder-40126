@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/store/app';
-import { Bill, Trainer } from '@shared/types';
+import { Bill, Trainer, Booking, Assessment } from '@shared/types';
+import { http } from '@/utils/http';
 import {
   formatCurrency,
   formatDateTime,
@@ -95,29 +96,74 @@ export default function BillDetail() {
   const navigate = useNavigate();
 
   const [paying, setPaying] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(true);
+  const [detailBill, setDetailBill] = useState<Bill | null>(null);
+  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
+  const [detailTrainer, setDetailTrainer] = useState<Trainer | null>(null);
+  const [detailAssessment, setDetailAssessment] = useState<Assessment | null>(null);
 
   useEffect(() => {
     fetchBills();
   }, [fetchBills]);
 
-  const bill = useMemo(() => bills.find(b => b.id === id), [bills, id]);
+  useEffect(() => {
+    if (!id) return;
+    setLoadingDetail(true);
+    const fetchDetail = async () => {
+      try {
+        const res = await http.get<{ bill: Bill; booking?: Booking; trainer?: Trainer; assessment?: Assessment }>(`/bills/${id}`);
+        if (res.success && res.data) {
+          setDetailBill(res.data.bill);
+          setDetailBooking(res.data.booking || null);
+          setDetailTrainer(res.data.trainer || null);
+          setDetailAssessment(res.data.assessment || null);
+        }
+      } finally {
+        setLoadingDetail(false);
+      }
+    };
+    fetchDetail();
+  }, [id]);
+
+  const bill = useMemo(() => detailBill ?? bills.find(b => b.id === id) ?? null, [detailBill, bills, id]);
   const booking = useMemo(
-    () => bookings.find(b => b.id === bill?.bookingId),
-    [bookings, bill]
+    () => detailBooking ?? bookings.find(b => b.id === bill?.bookingId) ?? null,
+    [detailBooking, bookings, bill]
   );
   const trainer = useMemo(
-    () => trainers.find((t: Trainer) => t.id === bill?.trainerId),
-    [trainers, bill]
+    () => detailTrainer ?? trainers.find((t: Trainer) => t.id === bill?.trainerId) ?? null,
+    [detailTrainer, trainers, bill]
   );
   const relatedAssessment = useMemo(
-    () => assessments.find(a => a.bookingId === bill?.bookingId),
-    [assessments, bill]
+    () => detailAssessment ?? assessments.find(a => a.bookingId === bill?.bookingId) ?? null,
+    [detailAssessment, assessments, bill]
   );
 
   const totalMinutes = useMemo(
     () => bill?.segments.reduce((s, x) => s + x.durationMinutes, 0) ?? 0,
     [bill]
   );
+
+  if (loadingDetail && !bill) {
+    return (
+      <div className="space-y-6 max-w-[1200px] animate-fade-up">
+        <button
+          onClick={() => navigate('/bills')}
+          className="text-sm text-stone-500 hover:text-brand-600 flex items-center gap-1"
+        >
+          <ArrowLeft size={14} /> 返回账单列表
+        </button>
+        <div className="card p-16 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-stone-100 mx-auto flex items-center justify-center text-stone-400 animate-pulse">
+            <Receipt size={32} strokeWidth={1.5} />
+          </div>
+          <div className="font-display text-xl text-stone-700 mt-5">
+            加载账单详情中…
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!bill) {
     return (
@@ -145,9 +191,16 @@ export default function BillDetail() {
   const StatusIcon = meta.icon;
 
   const handlePay = async () => {
+    if (!bill) return;
     setPaying(true);
-    await payBill(bill.id);
+    const ok = await payBill(bill.id);
     setPaying(false);
+    if (ok) {
+      const res = await http.get<{ bill: Bill; booking?: Booking; trainer?: Trainer; assessment?: Assessment }>(`/bills/${bill.id}`);
+      if (res.success && res.data) {
+        setDetailBill(res.data.bill);
+      }
+    }
   };
 
   const INFO_ITEMS = [

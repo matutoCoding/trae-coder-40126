@@ -91,10 +91,43 @@ export class ConflictChecker {
     }
     return { hasConflict: false };
   }
+
+  checkComprehensive(
+    trainer: Trainer,
+    startAt: string,
+    endAt: string,
+    excludeBookingId?: string
+  ): ConflictResult & { workRanges?: { start: string; end: string }[] } {
+    const start = parseISO(startAt);
+    const workRanges = getTrainerWorkRangesForDate(trainer.workSchedule, start);
+    const workResult = this.checkAgainstWorkSchedule(trainer, startAt, endAt);
+    const bookingResult = this.check(trainer.id, startAt, endAt, excludeBookingId);
+
+    if (bookingResult.hasConflict) {
+      return { ...bookingResult, workRanges };
+    }
+    if (workResult.hasConflict) {
+      return { ...workResult, workRanges };
+    }
+    return { hasConflict: false, workRanges };
+  }
 }
 
 export class SegmentedBillingService {
   constructor(private rateRepo: JsonRepository<RateTier>) {}
+
+  private buildFallbackTier(): RateTier {
+    return {
+      id: 'fallback_default',
+      name: '标准费率',
+      color: '#F97316',
+      multiplier: 1.0,
+      timeRanges: [{ start: '00:00', end: '24:00' }],
+      applicableWeekdays: [],
+      priority: 0,
+      description: '系统默认费率（配置不完整时自动降级）',
+    };
+  }
 
   calculate(
     baseHourlyRate: number,
@@ -108,10 +141,15 @@ export class SegmentedBillingService {
       return { segments: [], totalMinutes: 0, totalAmount: 0, baseRate: baseHourlyRate };
     }
 
-    const allTiers = this.rateRepo
+    let allTiers = this.rateRepo
       .findAll()
       .sort((a, b) => b.priority - a.priority);
-    const defaultTier = allTiers.find(t => t.priority === 0) ?? allTiers[allTiers.length - 1];
+
+    if (allTiers.length === 0) {
+      allTiers = [this.buildFallbackTier()];
+    }
+
+    const defaultTier = allTiers.find(t => t.priority === 0) ?? allTiers[allTiers.length - 1] ?? this.buildFallbackTier();
 
     const daySplits: Array<{ day: Date; dayStart: Date; dayEnd: Date }> = [];
     let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());

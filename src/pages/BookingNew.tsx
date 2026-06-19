@@ -163,10 +163,12 @@ export default function BookingNew() {
       startAt: startIso,
       endAt: endIso,
     });
-    if (result && result.hasConflict) {
+    if (result) {
       setConflict(result);
-      setConflictShake(true);
-      setTimeout(() => setConflictShake(false), 500);
+      if (result.hasConflict) {
+        setConflictShake(true);
+        setTimeout(() => setConflictShake(false), 500);
+      }
     } else {
       setConflict(null);
     }
@@ -185,10 +187,26 @@ export default function BookingNew() {
         endAt: endIso,
       });
       setBilling(result);
+    } catch (e) {
+      setBilling({
+        segments: [{
+          startTime: form.startTime,
+          endTime: form.endTime,
+          durationMinutes,
+          tierId: 'fallback',
+          tierName: '标准计费',
+          tierColor: '#F97316',
+          unitPrice: Math.round((selectedTrainer?.baseHourlyRate || 150) / 60 * 100) / 100,
+          subtotal: Math.round((selectedTrainer?.baseHourlyRate || 150) * durationMinutes / 60 * 100) / 100,
+        }],
+        totalMinutes: durationMinutes,
+        totalAmount: Math.round((selectedTrainer?.baseHourlyRate || 150) * durationMinutes / 60 * 100) / 100,
+        baseRate: selectedTrainer?.baseHourlyRate || 150,
+      });
     } finally {
       setBillingLoading(false);
     }
-  }, [form.trainerId, startIso, endIso, durationMinutes, previewBilling]);
+  }, [form.trainerId, startIso, endIso, durationMinutes, previewBilling, form.startTime, form.endTime, selectedTrainer]);
 
   useEffect(() => {
     if (conflictTimer.current) window.clearTimeout(conflictTimer.current);
@@ -546,6 +564,24 @@ export default function BookingNew() {
                     <p className="text-sm text-red-600 mt-1">
                       {conflict.message || '所选时段与该训练师的已有预约冲突，请调整时间。'}
                     </p>
+                    {conflict.workRanges && conflict.workRanges.length > 0 && (
+                      <div className="mt-3 bg-white/70 border border-red-100 rounded-xl px-3 py-2.5">
+                        <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+                          📅 该训练师当日可约时段
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {conflict.workRanges.map((wr, i) => (
+                            <span
+                              key={i}
+                              className="chip bg-forest-50 text-forest-700 border border-forest-200 text-xs"
+                            >
+                              <Clock size={10} className="mr-0.5" />
+                              {wr.start} – {wr.end}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {conflict.conflictingBookings && conflict.conflictingBookings.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {conflict.conflictingBookings.map((cb: Booking) => (
@@ -566,6 +602,18 @@ export default function BookingNew() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {!conflict?.hasConflict && selectedTrainer && form.date && form.startTime && form.endTime && durationMinutes > 0 && conflict?.workRanges && conflict.workRanges.length > 0 && (
+              <div className="rounded-2xl bg-forest-50 border border-forest-200 p-3.5 animate-fade-up">
+                <div className="flex items-center gap-2 text-sm text-forest-700">
+                  <CheckCircle2 size={15} />
+                  <span className="font-medium">该时段可预约</span>
+                  <span className="text-forest-600/80 text-xs ml-1">
+                    · 训练师可约时段：{conflict.workRanges.map(r => `${r.start}-${r.end}`).join('、')}
+                  </span>
                 </div>
               </div>
             )}

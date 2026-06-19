@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { TrainerService, BookingService, RateService, BillService, AssessmentService, billRepo } from '../services/index.js';
+import { TrainerService, BookingService, RateService, BillService, AssessmentService, billRepo, conflictChecker } from '../services/index.js';
 
 const router = Router();
 
@@ -21,13 +21,28 @@ router.get('/trainers', (req, res) => {
 
 router.get('/trainers/:id', (req, res) => {
   const trainer = trainerService.get(req.params.id);
-  if (!trainer) return ok(res, trainer);
+  if (trainer) return ok(res, trainer);
   return fail(res, '训练师不存在', 404);
 });
 
 router.post('/trainers', (req, res) => {
   try {
-    const trainer = trainerService.create(req.body);
+    const payload = req.body;
+    const fullPayload = {
+      status: 'active' as const,
+      workSchedule: {
+        monday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        tuesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        wednesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        thursday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        friday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        saturday: [{ start: '10:00', end: '16:00' }],
+        sunday: [],
+        exceptions: [],
+      },
+      ...payload,
+    };
+    const trainer = trainerService.create(fullPayload);
     return ok(res, trainer);
   } catch (e: any) {
     return fail(res, e.message);
@@ -36,7 +51,7 @@ router.post('/trainers', (req, res) => {
 
 router.put('/trainers/:id', (req, res) => {
   const trainer = trainerService.update(req.params.id, req.body);
-  if (!trainer) return ok(res, trainer);
+  if (trainer) return ok(res, trainer);
   return fail(res, '训练师不存在', 404);
 });
 
@@ -60,13 +75,33 @@ router.post('/bookings/check-conflict', (req, res) => {
   if (!trainerId || !startAt || !endAt) {
     return fail(res, '缺少必要参数');
   }
-  return ok(res, bookingService.checkConflict(trainerId, startAt, endAt, excludeBookingId));
+  const trainer = trainerService.get(trainerId);
+  if (!trainer) {
+    return fail(res, '训练师不存在');
+  }
+  const result = conflictChecker.checkComprehensive(trainer, startAt, endAt, excludeBookingId);
+  return ok(res, result);
 });
 
-router.post('/bookings', (req, res) => {
+router.post('/trainers', (req, res) => {
   try {
-    const result = bookingService.create(req.body);
-    return ok(res, result);
+    const payload = req.body;
+    const fullPayload = {
+      status: 'active' as const,
+      workSchedule: {
+        monday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        tuesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        wednesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        thursday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        friday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
+        saturday: [{ start: '10:00', end: '16:00' }],
+        sunday: [],
+        exceptions: [],
+      },
+      ...payload,
+    };
+    const trainer = trainerService.create(fullPayload);
+    return ok(res, trainer);
   } catch (e: any) {
     return fail(res, e.message);
   }
@@ -122,7 +157,8 @@ router.get('/bills/:id', (req, res) => {
   if (!bill) return fail(res, '账单不存在', 404);
   const booking = bookingService.get(bill.bookingId);
   const trainer = trainerService.get(bill.trainerId);
-  return ok(res, { bill, booking, trainer });
+  const assessment = assessmentService.list().find(a => a.bookingId === bill.bookingId);
+  return ok(res, { bill, booking, trainer, assessment });
 });
 
 router.post('/bills/:id/pay', (req, res) => {
