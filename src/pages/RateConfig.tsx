@@ -134,7 +134,7 @@ export default function RateConfig() {
     }
     const hasDefault = tiers.some(t => t.priority === 0);
     if (!hasDefault) {
-      return '请至少保留一个优先级为 0 的默认档位';
+      return '请至少保留一个优先级为 0 的默认档位，否则系统无法兜底计费';
     }
     for (const t of tiers) {
       if (!t.name?.trim()) {
@@ -147,6 +147,9 @@ export default function RateConfig() {
         if (r.start >= r.end) {
           return `档位「${t.name}」存在无效时段（${r.start}-${r.end}）`;
         }
+      }
+      if (typeof t.multiplier !== 'number' || t.multiplier <= 0) {
+        return `档位「${t.name}」的费率系数必须为正数`;
       }
     }
     return '';

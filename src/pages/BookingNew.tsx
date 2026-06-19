@@ -15,8 +15,10 @@ import {
   Send,
   X,
   ChevronRight,
+  Coffee,
+  Ban,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '@/store/app';
 import { Booking, ConflictResult, BillingResult, BillingSegment } from '@shared/types';
 import {
@@ -94,6 +96,7 @@ const INITIAL_FORM: FormState = {
 
 export default function BookingNew() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     trainers,
     fetchTrainers,
@@ -111,13 +114,37 @@ export default function BookingNew() {
   const [billingLoading, setBillingLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [trainerAvailLoading, setTrainerAvailLoading] = useState(false);
+  const [trainerAvail, setTrainerAvail] = useState<Record<string, {
+    status: 'available' | 'off' | 'conflict' | 'unknown';
+    message?: string;
+    workRanges?: { start: string; end: string }[];
+  }>>({});
 
   const conflictTimer = useRef<number | null>(null);
   const billingTimer = useRef<number | null>(null);
+  const availTimer = useRef<number | null>(null);
 
   useEffect(() => {
     fetchTrainers().finally(() => setLoading(false));
   }, [fetchTrainers]);
+
+  useEffect(() => {
+    if (loading) return;
+    const qp = searchParams;
+    const trainerId = qp.get('trainerId');
+    const date = qp.get('date');
+    const start = qp.get('start');
+    const end = qp.get('end');
+    const next: Partial<FormState> = {};
+    if (trainerId && trainers.some(t => t.id === trainerId)) next.trainerId = trainerId;
+    if (date) next.date = date;
+    if (start) next.startTime = start;
+    if (end) next.endTime = end;
+    if (Object.keys(next).length > 0) {
+      setForm(prev => ({ ...prev, ...next }));
+    }
+  }, [loading, searchParams, trainers]);
 
   useEffect(() => {
     if (toast) {
@@ -208,6 +235,60 @@ export default function BookingNew() {
     }
   }, [form.trainerId, startIso, endIso, durationMinutes, previewBilling, form.startTime, form.endTime, selectedTrainer]);
 
+  const runTrainerAvailability = useCallback(async () => {
+    if (!startIso || !endIso || durationMinutes <= 0) {
+      setTrainerAvail({});
+      return;
+    }
+    const list = activeTrainers;
+    if (list.length === 0) return;
+    setTrainerAvailLoading(true);
+    try {
+      const results = await Promise.all(
+        list.map(async t => {
+          const r = await checkConflict({
+            trainerId: t.id,
+            startAt: startIso,
+            endAt: endIso,
+          });
+          let status: 'available' | 'off' | 'conflict' | 'unknown' = 'unknown';
+          let message = '';
+          if (r) {
+            if (r.hasConflict) {
+              if (r.conflictingBookings && r.conflictingBookings.length > 0) {
+                status = 'conflict';
+                const cb = r.conflictingBookings[0];
+                message = `与 ${cb.petName}(${cb.ownerName}) 的预约冲突`;
+              } else {
+                status = 'off';
+                message = r.message || '不在工作时间或休假';
+              }
+            } else {
+              status = 'available';
+              message = '可预约';
+            }
+          }
+          return {
+            id: t.id,
+            status,
+            message,
+            workRanges: r?.workRanges,
+          };
+        })
+      );
+      const map: typeof trainerAvail = {};
+      for (const r of results) map[r.id] = r;
+      setTrainerAvail(map);
+    } finally {
+      setTrainerAvailLoading(false);
+    }
+  }, [startIso, endIso, durationMinutes, activeTrainers, checkConflict]);
+
+  const selectedTrainerAvail = useMemo(() => {
+    if (!form.trainerId) return null;
+    return trainerAvail[form.trainerId] || null;
+  }, [form.trainerId, trainerAvail]);
+
   useEffect(() => {
     if (conflictTimer.current) window.clearTimeout(conflictTimer.current);
     conflictTimer.current = window.setTimeout(runConflictCheck, 350);
@@ -224,6 +305,14 @@ export default function BookingNew() {
     };
   }, [runBillingPreview]);
 
+  useEffect(() => {
+    if (availTimer.current) window.clearTimeout(availTimer.current);
+    availTimer.current = window.setTimeout(runTrainerAvailability, 350);
+    return () => {
+      if (availTimer.current) window.clearTimeout(availTimer.current);
+    };
+  }, [runTrainerAvailability]);
+
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
     setFormErrors(prev => {
@@ -236,6 +325,9 @@ export default function BookingNew() {
   const validate = (): boolean => {
     const errors: Partial<Record<keyof FormState, string>> = {};
     if (!form.trainerId) errors.trainerId = '请选择训练师';
+    if (form.trainerId && selectedTrainerAvail && selectedTrainerAvail.status !== 'available') {
+      errors.trainerId = selectedTrainerAvail.message || '该训练师此时段不可约';
+    }
     if (!form.ownerName.trim()) errors.ownerName = '请填写宠主姓名';
     if (!form.ownerPhone.trim()) errors.ownerPhone = '请填写联系电话';
     if (!form.petName.trim()) errors.petName = '请填写宠物名字';
@@ -360,18 +452,111 @@ export default function BookingNew() {
                 <select
                   className={`input pl-10 appearance-none ${formErrors.trainerId ? 'border-red-300 focus:ring-red-200 focus:border-red-400' : ''}`}
                   value={form.trainerId}
-                  onChange={e => updateField('trainerId', e.target.value)}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v) {
+                      const avail = trainerAvail[v];
+                      if (avail && avail.status !== 'available') {
+                        showToast('error', avail.message || '该训练师此时段不可约');
+                        return;
+                      }
+                    }
+                    updateField('trainerId', v);
+                  }}
                   disabled={loading}
                 >
                   <option value="">{loading ? '加载中…' : '请选择训练师'}</option>
-                  {activeTrainers.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} — {formatCurrency(t.baseHourlyRate)}/时
-                    </option>
-                  ))}
+                  {activeTrainers.map(t => {
+                    const avail = trainerAvail[t.id];
+                    const disabled = avail && avail.status !== 'available';
+                    const label = avail
+                      ? avail.status === 'available'
+                        ? `${t.name} — ${formatCurrency(t.baseHourlyRate)}/时 · 可约`
+                        : avail.status === 'conflict'
+                          ? `${t.name} — ${formatCurrency(t.baseHourlyRate)}/时 · 已被占用`
+                          : `${t.name} — ${formatCurrency(t.baseHourlyRate)}/时 · 休息/不上班`
+                      : `${t.name} — ${formatCurrency(t.baseHourlyRate)}/时`;
+                    return (
+                      <option key={t.id} value={t.id} disabled={!!disabled}>
+                        {label}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               {formErrors.trainerId && <p className="text-xs text-red-500 mt-1">{formErrors.trainerId}</p>}
+
+              {(startIso && endIso && durationMinutes > 0) && (
+                <div className="mt-4">
+                  <div className="text-xs text-stone-500 mb-2 flex items-center gap-2">
+                    <span>训练师可用性速览</span>
+                    {trainerAvailLoading && (
+                      <span className="text-[11px] text-stone-400 animate-pulse">检查中…</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {activeTrainers.map(t => {
+                      const avail = trainerAvail[t.id];
+                      const selected = form.trainerId === t.id;
+                      const isAvail = !avail || avail.status === 'available';
+                      const statusChip = avail?.status === 'available' ? (
+                        <span className="chip bg-forest-50 text-forest-700 border border-forest-200 text-[11px]">
+                          <CheckCircle2 size={10} className="mr-0.5" />
+                          可约
+                        </span>
+                      ) : avail?.status === 'conflict' ? (
+                        <span className="chip bg-red-50 text-red-700 border border-red-200 text-[11px]">
+                          <X size={10} className="mr-0.5" />
+                          时段冲突
+                        </span>
+                      ) : avail?.status === 'off' ? (
+                        <span className="chip bg-stone-100 text-stone-500 border border-stone-200 text-[11px]">
+                          <Coffee size={10} className="mr-0.5" />
+                          休息/休假
+                        </span>
+                      ) : (
+                        <span className="chip bg-stone-50 text-stone-400 border border-stone-200 text-[11px]">
+                          <Timer size={10} className="mr-0.5" />
+                          检查中
+                        </span>
+                      );
+                      return (
+                        <button
+                          type="button"
+                          key={t.id}
+                          disabled={!isAvail}
+                          onClick={() => updateField('trainerId', t.id)}
+                          className={`text-left rounded-xl border p-3 transition-all ${
+                            selected
+                              ? 'border-brand-400 bg-brand-50 ring-2 ring-brand-100'
+                              : isAvail
+                                ? 'border-stone-200 bg-white hover:border-brand-300 hover:bg-brand-50/30 cursor-pointer'
+                                : 'border-stone-100 bg-stone-50/60 opacity-60 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-100 to-cream-100 flex items-center justify-center text-base shrink-0">
+                                🐾
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-stone-800 truncate">{t.name}</div>
+                                <div className="text-[11px] text-stone-500">
+                                  {formatCurrency(t.baseHourlyRate)}/时 · {t.specialties.slice(0, 2).join('、')}
+                                </div>
+                              </div>
+                            </div>
+                            {statusChip}
+                          </div>
+                          {avail?.status !== 'available' && avail?.message && (
+                            <div className="text-[11px] text-stone-500 mt-2 pl-10">{avail.message}</div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -727,7 +912,7 @@ export default function BookingNew() {
             <button
               className="btn-primary w-full !py-3.5 text-base shadow-lg"
               onClick={handleSubmit}
-              disabled={submitting || conflict?.hasConflict || billingLoading}
+              disabled={submitting || conflict?.hasConflict || billingLoading || (!!selectedTrainerAvail && selectedTrainerAvail.status !== 'available')}
             >
               {submitting ? (
                 <>

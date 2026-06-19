@@ -13,6 +13,8 @@ import {
   CreditCard,
   Search,
   Users2,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 type StatusFilter = 'all' | 'pending' | 'paid' | 'cancelled';
@@ -49,18 +51,29 @@ export default function BillList() {
   const bills = useAppStore(s => s.bills);
   const trainers = useAppStore(s => s.trainers);
   const fetchBills = useAppStore(s => s.fetchBills);
+  const payBill = useAppStore(s => s.payBill);
   const navigate = useNavigate();
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [trainerFilter, setTrainerFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [payingId, setPayingId] = useState<string>('');
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
   useEffect(() => {
     fetchBills();
   }, [fetchBills]);
 
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
+
   const stats = useMemo(() => {
-    const totalRevenue = bills.reduce((s, b) => s + b.totalAmount, 0);
+    const activeBills = bills.filter(b => b.status !== 'cancelled');
+    const totalRevenue = activeBills.reduce((s, b) => s + b.totalAmount, 0);
     const paid = bills
       .filter(b => b.status === 'paid')
       .reduce((s, b) => s + b.totalAmount, 0);
@@ -72,8 +85,20 @@ export default function BillList() {
       paid,
       pending,
       count: bills.length,
+      activeCount: activeBills.length,
     };
   }, [bills]);
+
+  const handleMarkPaid = async (billId: string) => {
+    setPayingId(billId);
+    const ok = await payBill(billId);
+    setPayingId('');
+    if (ok) {
+      setToast({ type: 'success', msg: '已标记为收款成功' });
+    } else {
+      setToast({ type: 'error', msg: '操作失败，请重试' });
+    }
+  };
 
   const filtered = useMemo(() => {
     const kw = search.trim().toLowerCase();
@@ -128,8 +153,8 @@ export default function BillList() {
     },
     {
       key: 'count',
-      label: '账单数',
-      value: `${stats.count} 单`,
+      label: '有效账单数',
+      value: `${stats.activeCount} 单`,
       icon: FileText,
       color: 'from-brand-500 to-brand-600',
       iconBg: 'bg-brand-100',
@@ -363,14 +388,24 @@ export default function BillList() {
                   <div className="flex items-center gap-2">
                     {bill.status === 'pending' && (
                       <button
-                        className="btn-primary !py-2 !px-4 text-xs"
-                        onClick={e => {
+                        className="btn-success !py-2 !px-4 text-xs"
+                        disabled={payingId === bill.id}
+                        onClick={async e => {
                           e.stopPropagation();
-                          navigate(`/bills/${bill.id}`);
+                          await handleMarkPaid(bill.id);
                         }}
                       >
-                        <CreditCard size={13} />
-                        立即支付
+                        {payingId === bill.id ? (
+                          <>
+                            <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                            处理中
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={13} />
+                            标记已收款
+                          </>
+                        )}
                       </button>
                     )}
                     <button
@@ -390,6 +425,27 @@ export default function BillList() {
           );
         })}
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-fade-up">
+          <div
+            className={`card px-5 py-3.5 flex items-center gap-3 shadow-lg ${
+              toast.type === 'success'
+                ? 'bg-forest-50 border-forest-100'
+                : 'bg-red-50 border-red-100'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 size={18} className="text-forest-500 shrink-0" />
+            ) : (
+              <AlertTriangle size={18} className="text-red-500 shrink-0" />
+            )}
+            <span className={`text-sm font-medium ${toast.type === 'success' ? 'text-forest-700' : 'text-red-700'}`}>
+              {toast.msg}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

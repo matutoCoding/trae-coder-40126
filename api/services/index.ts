@@ -202,13 +202,9 @@ export class RateService {
       const sv = this.validateSingleTier(t);
       if (!sv.valid) return sv;
     }
-    const hasDefaultOrFallback = tiers.some(t =>
-      t.priority === 0 ||
-      (t.applicableWeekdays.length === 0 &&
-        t.timeRanges.some(r => r.start <= '00:00' && r.end >= '23:59'))
-    );
-    if (!hasDefaultOrFallback && tiers.length < 2) {
-      return { valid: false, message: '请至少保留一个默认档（优先级0）或覆盖全天的档位' };
+    const hasDefault = tiers.some(t => t.priority === 0);
+    if (!hasDefault) {
+      return { valid: false, message: '请至少保留一个优先级为 0 的默认档位，否则系统无法兜底计费' };
     }
     return { valid: true };
   }

@@ -66,9 +66,11 @@ export default function ScheduleCalendar() {
   const navigate = useNavigate();
   const trainers = useAppStore(s => s.trainers);
   const bookings = useAppStore(s => s.bookings);
+  const fetchBookings = useAppStore(s => s.fetchBookings);
+  const fetchTrainers = useAppStore(s => s.fetchTrainers);
   const createBooking = useAppStore(s => s.createBooking);
 
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 5, 16));
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedTrainerIds, setSelectedTrainerIds] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -76,9 +78,16 @@ export default function ScheduleCalendar() {
   const [quickBooking, setQuickBooking] = useState<QuickBookingState | null>(null);
   const [newPetName, setNewPetName] = useState('');
   const [newOwnerName, setNewOwnerName] = useState('');
+  const [newOwnerPhone, setNewOwnerPhone] = useState('');
+  const [newCourseType, setNewCourseType] = useState('基础服从课');
   const [newPetType, setNewPetType] = useState<'dog' | 'cat' | 'other'>('dog');
 
   const today = new Date();
+
+  useEffect(() => {
+    fetchTrainers();
+    fetchBookings();
+  }, [fetchTrainers, fetchBookings]);
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
@@ -176,23 +185,37 @@ export default function ScheduleCalendar() {
     setQuickBooking({ open: true, trainerId, date, startTime, endTime });
     setNewPetName('');
     setNewOwnerName('');
+    setNewOwnerPhone('');
+    setNewCourseType('基础服从课');
     setNewPetType('dog');
+  };
+
+  const goFullForm = (qb: QuickBookingState) => {
+    const dateStr = formatDate(qb.date);
+    navigate(`/bookings/new?trainerId=${qb.trainerId}&date=${dateStr}&start=${qb.startTime}&end=${qb.endTime}`);
   };
 
   const handleCreateQuickBooking = async () => {
     if (!quickBooking || !newPetName || !newOwnerName) return;
     const startDt = buildDateTime(quickBooking.date, quickBooking.startTime);
     const endDt = buildDateTime(quickBooking.date, quickBooking.endTime);
-    await createBooking({
+    const result = await createBooking({
       trainerId: quickBooking.trainerId,
       petName: newPetName,
       ownerName: newOwnerName,
+      ownerPhone: newOwnerPhone,
       petType: newPetType,
+      courseType: newCourseType,
       startAt: startDt.toISOString(),
       endAt: endDt.toISOString(),
       status: 'confirmed',
     });
-    setQuickBooking(null);
+    if (result.success) {
+      setQuickBooking(null);
+      navigate('/bookings');
+    } else {
+      alert(result.message || '创建失败');
+    }
   };
 
   function buildDateTime(date: Date, timeStr: string): Date {
@@ -268,6 +291,10 @@ export default function ScheduleCalendar() {
                 {selectedTrainerIds.length}
               </span>
             )}
+          </button>
+          <button className="btn-primary" onClick={() => navigate('/bookings/new')}>
+            <Plus size={16} />
+            新建预约
           </button>
         </div>
       </div>
@@ -652,12 +679,47 @@ export default function ScheduleCalendar() {
                   onChange={e => setNewOwnerName(e.target.value)}
                 />
               </div>
+
+              <div>
+                <label className="label">联系电话</label>
+                <input
+                  type="tel"
+                  className="input"
+                  placeholder="如：13800138000"
+                  value={newOwnerPhone}
+                  onChange={e => setNewOwnerPhone(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="label">课程类型</label>
+                <select
+                  className="input"
+                  value={newCourseType}
+                  onChange={e => setNewCourseType(e.target.value)}
+                >
+                  <option value="基础服从课">基础服从课</option>
+                  <option value="行为纠正课">行为纠正课</option>
+                  <option value="敏捷训练课">敏捷训练课</option>
+                  <option value="幼犬启蒙课">幼犬启蒙课</option>
+                  <option value="高级技能课">高级技能课</option>
+                </select>
+              </div>
             </div>
 
             <div className="flex gap-3 mt-6">
               <button className="btn-secondary flex-1" onClick={() => setQuickBooking(null)}>
                 取消
               </button>
+              {quickBooking && (
+                <button
+                  type="button"
+                  className="btn-outline flex-1"
+                  onClick={() => goFullForm(quickBooking)}
+                >
+                  去完整表单
+                </button>
+              )}
               <button
                 className="btn-primary flex-1"
                 disabled={!newPetName || !newOwnerName}
