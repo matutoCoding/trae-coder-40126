@@ -143,13 +143,13 @@ export class SegmentedBillingService {
 
     let allTiers = this.rateRepo
       .findAll()
-      .sort((a, b) => b.priority - a.priority);
+      .sort((a, b) => a.priority - b.priority);
 
     if (allTiers.length === 0) {
       allTiers = [this.buildFallbackTier()];
     }
 
-    const defaultTier = allTiers.find(t => t.priority === 0) ?? allTiers[allTiers.length - 1] ?? this.buildFallbackTier();
+    const defaultTier = allTiers.find(t => t.priority === 0) ?? allTiers[0] ?? this.buildFallbackTier();
 
     const daySplits: Array<{ day: Date; dayStart: Date; dayEnd: Date }> = [];
     let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -196,7 +196,7 @@ export class SegmentedBillingService {
             if (inter &&
               timeToMinutes(inter.start) === timeToMinutes(sub.start) &&
               timeToMinutes(inter.end) === timeToMinutes(sub.end)) {
-              if (!matchedTier || tier.priority > matchedTier.priority) {
+              if (!matchedTier || tier.priority < matchedTier.priority) {
                 matchedTier = tier;
               }
             }

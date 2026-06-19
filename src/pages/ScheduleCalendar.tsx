@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,6 +24,10 @@ import {
   isSameDay,
   differenceInMinutes,
   startOfDay,
+  getTrainerWorkRangesForDate,
+  timeToMinutes,
+  minutesToTime,
+  doTimeRangesOverlap,
 } from '@shared/utils';
 import {
   addDays,
@@ -218,10 +222,24 @@ export default function ScheduleCalendar() {
     }
   };
 
-  function buildDateTime(date: Date, timeStr: string): Date {
+  const buildDateTime = useCallback(function buildDateTime(date: Date, timeStr: string): Date {
     const [h, m] = timeStr.split(':').map(Number);
     return setMinutes(setHours(startOfDay(date), h), m);
-  }
+  }, []);
+
+  const getWorkRangesFor = useCallback((trainer: Trainer, date: Date) => {
+    if (!trainer.workSchedule) return [];
+    return getTrainerWorkRangesForDate(trainer.workSchedule, date);
+  }, []);
+
+  const isSlotInWorkTime = useCallback((trainer: Trainer, date: Date, slotIndex: number): boolean => {
+    const workRanges = getWorkRangesFor(trainer, date);
+    if (workRanges.length === 0) return false;
+    const slotStart = START_HOUR * 60 + slotIndex * SLOT_MINUTES;
+    const slotEnd = slotStart + SLOT_MINUTES;
+    const slotRange = { start: minutesToTime(slotStart), end: minutesToTime(slotEnd) };
+    return workRanges.some(wr => doTimeRangesOverlap(slotRange, wr));
+  }, [getWorkRangesFor]);
 
   const getTrainerName = (id: string) => trainers.find(t => t.id === id)?.name ?? id;
 
@@ -250,6 +268,11 @@ export default function ScheduleCalendar() {
   const cancelledPattern = {
     backgroundImage:
       'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(120,113,108,0.3) 4px, rgba(120,113,108,0.3) 8px)',
+  };
+
+  const offWorkPattern = {
+    backgroundImage:
+      'repeating-linear-gradient(135deg, rgba(203,213,225,0.35), rgba(203,213,225,0.35) 3px, transparent 3px, transparent 7px)',
   };
 
   return (
@@ -316,6 +339,10 @@ export default function ScheduleCalendar() {
 
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-white border border-stone-200" />
+              <span className="text-stone-600">可约</span>
+            </div>
+            <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-brand-500/50 border border-brand-500/70" />
               <span className="text-stone-600">已确认</span>
             </div>
@@ -326,6 +353,10 @@ export default function ScheduleCalendar() {
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-stone-200 border border-stone-300" style={cancelledPattern} />
               <span className="text-stone-600">已取消</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-stone-100 border border-stone-200" style={offWorkPattern} />
+              <span className="text-stone-600">不可约</span>
             </div>
           </div>
         </div>
@@ -460,17 +491,26 @@ export default function ScheduleCalendar() {
                       }`}
                       style={{ height: calendarHeight }}
                     >
-                      {timeSlots.map((_, idx) => (
-                        <div
-                          key={idx}
-                          className="absolute left-0 right-0 border-t border-stone-50 hover:bg-brand-50/30 cursor-pointer transition-colors"
-                          style={{
-                            top: idx * SLOT_HEIGHT,
-                            height: SLOT_HEIGHT,
-                          }}
-                          onClick={() => handleSlotClick(trainer.id, date, idx)}
-                        />
-                      ))}
+                      {timeSlots.map((_, idx) => {
+                        const workTime = isSlotInWorkTime(trainer, date, idx);
+                        return (
+                          <div
+                            key={idx}
+                            className={`absolute left-0 right-0 border-t transition-colors ${
+                              workTime
+                                ? 'border-stone-50 hover:bg-brand-50/30 cursor-pointer'
+                                : 'border-stone-100/60 cursor-not-allowed pointer-events-none'
+                            }`}
+                            style={{
+                              top: idx * SLOT_HEIGHT,
+                              height: SLOT_HEIGHT,
+                              ...(workTime ? {} : offWorkPattern),
+                              backgroundColor: workTime ? undefined : 'rgba(248,250,252,0.4)',
+                            }}
+                            onClick={() => workTime && handleSlotClick(trainer.id, date, idx)}
+                          />
+                        );
+                      })}
 
                       {dayBookings.map(booking => {
                         const top = getSlotOffset(booking.startAt);
@@ -500,7 +540,26 @@ export default function ScheduleCalendar() {
                             onMouseLeave={() => setHoveredBooking(null)}
                             onClick={e => {
                               e.stopPropagation();
-                              navigate('/bookings');
+                              if (booking.status === 'cancelled') {
+                                const start = parseISO(booking.startAt);
+                                const end = parseISO(booking.endAt);
+                                const startTimeStr = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`;
+                                const endTimeStr = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`;
+                                setQuickBooking({
+                                  open: true,
+                                  trainerId: booking.trainerId,
+                                  date: start,
+                                  startTime: startTimeStr,
+                                  endTime: endTimeStr,
+                                });
+                                setNewPetName('');
+                                setNewOwnerName('');
+                                setNewOwnerPhone('');
+                                setNewCourseType(booking.courseType || '基础服从课');
+                                setNewPetType(booking.petType as any);
+                              } else {
+                                navigate('/bookings');
+                              }
                             }}
                           >
                             <div className={`text-xs font-semibold truncate ${getBookingText(booking.status)}`}>

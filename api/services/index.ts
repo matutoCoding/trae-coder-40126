@@ -169,6 +169,31 @@ export class BookingService {
 }
 
 export class RateService {
+  constructor() {
+    this.migrate();
+  }
+
+  private migrate() {
+    const all = rateRepo.findAll();
+    let changed = false;
+    const migrated: RateTier[] = all.map(t => {
+      const isFullDay =
+        t.applicableWeekdays.length === 0 &&
+        t.timeRanges.some(r => r.start <= '00:00' && r.end >= '23:59');
+      if (isFullDay && t.priority < 900) {
+        changed = true;
+        return { ...t, priority: 999 };
+      }
+      return t;
+    });
+    const hasDefault = migrated.some(t => t.priority === 0);
+    if (!hasDefault && migrated.length > 0) {
+      changed = true;
+      migrated[0] = { ...migrated[0], priority: 0 };
+    }
+    if (changed) rateRepo.bulkReplace(migrated);
+  }
+
   list() {
     return rateRepo.findAll().sort((a, b) => a.priority - b.priority);
   }

@@ -211,5 +211,36 @@
     "status": "confirmed",
     "createdAt": "2026-06-19T22:04:31.742Z",
     "billId": "bill_mqlh83ge1cope7"
+  },
+  {
+    "trainerId": "trainer_002",
+    "ownerName": "测试主人",
+    "ownerPhone": "13800000000",
+    "petName": "小哈",
+    "petType": "dog",
+    "petBreed": "哈士奇",
+    "courseType": "基础服从课",
+    "startAt": "2026-06-24T10:00:00+08:00",
+    "endAt": "2026-06-24T11:00:00+08:00",
+    "id": "booking_mqlie17rpg18et",
+    "status": "cancelled",
+    "createdAt": "2026-06-19T22:37:08.391Z",
+    "billId": "bill_mqlie17rsq4ww9",
+    "cancelledAt": "2026-06-19T22:37:23.441Z"
+  },
+  {
+    "trainerId": "trainer_002",
+    "ownerName": "测试主人",
+    "ownerPhone": "13800000000",
+    "petName": "小哈",
+    "petType": "dog",
+    "petBreed": "哈士奇",
+    "courseType": "基础服从课",
+    "startAt": "2026-06-24T10:00:00+08:00",
+    "endAt": "2026-06-24T11:00:00+08:00",
+    "id": "booking_mqlieo36cnpfc0",
+    "status": "confirmed",
+    "createdAt": "2026-06-19T22:37:38.034Z",
+    "billId": "bill_mqlieo36qj0rmy"
   }
 ]
