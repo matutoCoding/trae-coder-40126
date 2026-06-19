@@ -83,25 +83,10 @@ router.post('/bookings/check-conflict', (req, res) => {
   return ok(res, result);
 });
 
-router.post('/trainers', (req, res) => {
+router.post('/bookings', (req, res) => {
   try {
-    const payload = req.body;
-    const fullPayload = {
-      status: 'active' as const,
-      workSchedule: {
-        monday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
-        tuesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
-        wednesday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
-        thursday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
-        friday: [{ start: '09:00', end: '12:00' }, { start: '14:00', end: '18:00' }],
-        saturday: [{ start: '10:00', end: '16:00' }],
-        sunday: [],
-        exceptions: [],
-      },
-      ...payload,
-    };
-    const trainer = trainerService.create(fullPayload);
-    return ok(res, trainer);
+    const result = bookingService.create(req.body);
+    return ok(res, result);
   } catch (e: any) {
     return fail(res, e.message);
   }
@@ -123,6 +108,16 @@ router.post('/bookings/:id/complete', (req, res) => {
 });
 
 router.get('/rates', (_, res) => ok(res, rateService.list()));
+
+router.put('/rates/:id', (req, res) => {
+  try {
+    const tier = { ...req.body, id: req.params.id };
+    const result = rateService.saveTier(tier);
+    return ok(res, result);
+  } catch (e: any) {
+    return fail(res, e.message);
+  }
+});
 
 router.put('/rates', (req, res) => {
   try {

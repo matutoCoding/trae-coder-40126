@@ -180,5 +180,36 @@
     "status": "confirmed",
     "createdAt": "2026-06-19T02:00:00.000Z",
     "courseType": "一对一私教课"
+  },
+  {
+    "trainerId": "trainer_002",
+    "ownerName": "测试主人",
+    "ownerPhone": "13800138000",
+    "petName": "旺财",
+    "petType": "dog",
+    "petBreed": "金毛",
+    "courseType": "基础服从课",
+    "startAt": "2026-06-21T10:00:00+08:00",
+    "endAt": "2026-06-21T11:30:00+08:00",
+    "id": "booking_mqlh7gfc10mrcl",
+    "status": "cancelled",
+    "createdAt": "2026-06-19T22:04:01.896Z",
+    "billId": "bill_mqlh7gfc4vfsps",
+    "cancelledAt": "2026-06-19T22:04:31.692Z"
+  },
+  {
+    "trainerId": "trainer_002",
+    "ownerName": "测试主人",
+    "ownerPhone": "13800138000",
+    "petName": "旺财",
+    "petType": "dog",
+    "petBreed": "金毛",
+    "courseType": "基础服从课",
+    "startAt": "2026-06-21T10:00:00+08:00",
+    "endAt": "2026-06-21T11:30:00+08:00",
+    "id": "booking_mqlh83ge4wfcng",
+    "status": "confirmed",
+    "createdAt": "2026-06-19T22:04:31.742Z",
+    "billId": "bill_mqlh83ge1cope7"
   }
 ]

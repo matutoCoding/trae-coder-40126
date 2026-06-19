@@ -27,7 +27,8 @@ interface AppState {
   checkConflict: (p: any) => Promise<ConflictResult | null>;
 
   previewBilling: (p: any) => Promise<BillingResult | null>;
-  saveRates: (tiers: RateTier[]) => Promise<boolean>;
+  saveRates: (tiers: RateTier[]) => Promise<{ success: boolean; message?: string }>;
+  saveSingleTier: (tier: RateTier) => Promise<{ success: boolean; message?: string; data?: RateTier }>;
 
   payBill: (id: string) => Promise<boolean>;
 
@@ -147,9 +148,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     const res = await http.put<RateTier[]>('/rates', tiers);
     if (res.success && res.data) {
       set({ rates: res.data });
-      return true;
+      return { success: true };
     }
-    return false;
+    return { success: false, message: res.message };
+  },
+
+  saveSingleTier: async (tier) => {
+    const res = await http.put<RateTier>(`/rates/${tier.id}`, tier);
+    if (res.success && res.data) {
+      await get().fetchRates();
+      return { success: true, data: res.data };
+    }
+    return { success: false, message: res.message };
   },
 
   payBill: async (id) => {

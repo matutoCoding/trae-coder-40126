@@ -429,5 +429,51 @@
     "ownerName": "邓女士",
     "petName": "球球",
     "coursePeriod": "6/26 10:00-13:00"
+  },
+  {
+    "id": "bill_mqlh7gfc4vfsps",
+    "bookingId": "booking_mqlh7gfc10mrcl",
+    "trainerId": "trainer_002",
+    "segments": [
+      {
+        "startTime": "10:00",
+        "endTime": "11:30",
+        "durationMinutes": 90,
+        "tierId": "rate_weekend",
+        "tierName": "周末平峰",
+        "tierColor": "#10B981",
+        "unitPrice": 5.6,
+        "subtotal": 504
+      }
+    ],
+    "totalAmount": 504,
+    "status": "cancelled",
+    "createdAt": "2026-06-19T22:04:01.896Z",
+    "ownerName": "测试主人",
+    "petName": "旺财",
+    "coursePeriod": "6/21 10:00-11:30"
+  },
+  {
+    "id": "bill_mqlh83ge1cope7",
+    "bookingId": "booking_mqlh83ge4wfcng",
+    "trainerId": "trainer_002",
+    "segments": [
+      {
+        "startTime": "10:00",
+        "endTime": "11:30",
+        "durationMinutes": 90,
+        "tierId": "rate_weekend",
+        "tierName": "周末平峰",
+        "tierColor": "#10B981",
+        "unitPrice": 5.6,
+        "subtotal": 504
+      }
+    ],
+    "totalAmount": 504,
+    "status": "pending",
+    "createdAt": "2026-06-19T22:04:31.742Z",
+    "ownerName": "测试主人",
+    "petName": "旺财",
+    "coursePeriod": "6/21 10:00-11:30"
   }
 ]

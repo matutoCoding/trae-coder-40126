@@ -6,6 +6,7 @@ import {
   MOCK_BOOKINGS,
   MOCK_RATE_TIERS,
   MOCK_TRAINERS,
+  defaultWorkSchedule,
 } from '../db/mockData.js';
 import { JsonRepository } from '../db/repository.js';
 import { ConflictChecker, SegmentedBillingService } from './core.js';
@@ -20,6 +21,32 @@ export const conflictChecker = new ConflictChecker(bookingRepo);
 export const billingService = new SegmentedBillingService(rateRepo);
 
 export class TrainerService {
+  constructor() {
+    this.migrate();
+  }
+
+  private migrate() {
+    const all = trainerRepo.findAll();
+    const TEST_PREFIXES = ['测试训练师', 'test', 'Test', 'TEST'];
+    const isTest = (n: string) => TEST_PREFIXES.some(p => n.includes(p));
+
+    let changed = false;
+    const migrated: Trainer[] = [];
+    for (const t of all) {
+      if (isTest(t.name)) { changed = true; continue; }
+
+      const mt = { ...t };
+      if (!mt.status) { mt.status = 'active'; changed = true; }
+      if (!mt.workSchedule) { mt.workSchedule = { ...defaultWorkSchedule }; changed = true; }
+      if (!mt.workSchedule.monday) { mt.workSchedule = { ...defaultWorkSchedule, ...mt.workSchedule }; changed = true; }
+      if (!mt.workSchedule.exceptions) { mt.workSchedule.exceptions = []; changed = true; }
+      migrated.push(mt);
+    }
+    if (changed) {
+      trainerRepo.bulkReplace(migrated);
+    }
+  }
+
   list(status?: string) {
     if (status) return trainerRepo.findAll(t => t.status === status);
     return trainerRepo.findAll();
@@ -76,18 +103,13 @@ export class BookingService {
       throw new Error('训练师不存在');
     }
 
-    const scheduleConflict = conflictChecker.checkAgainstWorkSchedule(
+    const comprehensive = conflictChecker.checkComprehensive(
       trainer,
       payload.startAt,
       payload.endAt
     );
-    if (scheduleConflict.hasConflict) {
-      throw new Error(scheduleConflict.message);
-    }
-
-    const conflict = conflictChecker.check(payload.trainerId, payload.startAt, payload.endAt);
-    if (conflict.hasConflict) {
-      throw new Error(conflict.message ?? '时段冲突');
+    if (comprehensive.hasConflict) {
+      throw new Error(comprehensive.message ?? '时段冲突');
     }
 
     const billing = billingService.calculate(trainer.baseHourlyRate, payload.startAt, payload.endAt);
@@ -151,9 +173,34 @@ export class RateService {
     return rateRepo.findAll().sort((a, b) => a.priority - b.priority);
   }
 
+  validateSingleTier(tier: RateTier): { valid: boolean; message?: string } {
+    if (!tier.name || !tier.name.trim()) {
+      return { valid: false, message: '档位名称不能为空' };
+    }
+    if (!tier.timeRanges || tier.timeRanges.length === 0) {
+      return { valid: false, message: '至少需要一个有效时段' };
+    }
+    for (const r of tier.timeRanges) {
+      if (!r.start || !r.end) {
+        return { valid: false, message: '时段起止时间不能为空' };
+      }
+      if (r.start >= r.end) {
+        return { valid: false, message: `时段「${r.start}-${r.end}」结束时间必须晚于开始时间` };
+      }
+    }
+    if (typeof tier.multiplier !== 'number' || tier.multiplier <= 0) {
+      return { valid: false, message: '费率系数必须为正数' };
+    }
+    return { valid: true };
+  }
+
   validateTiers(tiers: RateTier[]): { valid: boolean; message?: string } {
     if (!tiers || tiers.length === 0) {
       return { valid: false, message: '至少需要保留一个费率档位' };
+    }
+    for (const t of tiers) {
+      const sv = this.validateSingleTier(t);
+      if (!sv.valid) return sv;
     }
     const hasDefaultOrFallback = tiers.some(t =>
       t.priority === 0 ||
@@ -164,6 +211,23 @@ export class RateService {
       return { valid: false, message: '请至少保留一个默认档（优先级0）或覆盖全天的档位' };
     }
     return { valid: true };
+  }
+
+  saveTier(tier: RateTier): RateTier {
+    const sv = this.validateSingleTier(tier);
+    if (!sv.valid) throw new Error(sv.message);
+
+    const all = rateRepo.findAll();
+    const exists = all.some(t => t.id === tier.id);
+    if (!exists) {
+      return rateRepo.create(tier);
+    }
+
+    const before = all.filter(t => t.id !== tier.id);
+    const after = [...before, tier];
+    const globalV = this.validateTiers(after);
+    if (!globalV.valid) throw new Error(globalV.message);
+    return rateRepo.update(tier.id, () => tier);
   }
 
   bulkUpdate(tiers: RateTier[]) {

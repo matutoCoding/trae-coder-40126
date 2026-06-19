@@ -95,5 +95,19 @@
     ],
     "priority": 0,
     "description": "工作日常规时段基础价"
+  },
+  {
+    "id": "rate_standard",
+    "name": "标准档",
+    "color": "#64748B",
+    "multiplier": 1,
+    "timeRanges": [
+      {
+        "start": "00:00",
+        "end": "23:59"
+      }
+    ],
+    "applicableWeekdays": [],
+    "priority": 99
   }
 ]

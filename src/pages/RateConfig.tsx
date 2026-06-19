@@ -58,6 +58,7 @@ export default function RateConfig() {
   const rates = useAppStore(s => s.rates);
   const fetchRates = useAppStore(s => s.fetchRates);
   const saveRates = useAppStore(s => s.saveRates);
+  const saveSingleTierStore = useAppStore(s => s.saveSingleTier);
 
   const [editingMap, setEditingMap] = useState<Record<string, EditingTier>>({});
   const [showNewTier, setShowNewTier] = useState(false);
@@ -65,6 +66,22 @@ export default function RateConfig() {
   const [savingAll, setSavingAll] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [savingTierId, setSavingTierId] = useState<string>('');
+  const [singleTierSuccess, setSingleTierSuccess] = useState<string>('');
+
+  useEffect(() => {
+    if (saveError) {
+      const t = setTimeout(() => setSaveError(''), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [saveError]);
+
+  useEffect(() => {
+    if (singleTierSuccess) {
+      const t = setTimeout(() => setSingleTierSuccess(''), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [singleTierSuccess]);
 
   useEffect(() => {
     fetchRates();
@@ -89,12 +106,25 @@ export default function RateConfig() {
   const saveSingleTier = async (id: string) => {
     const editing = editingMap[id];
     if (!editing) return;
-    const allTiers: RateTier[] = rates.map(r =>
-      r.id === id ? { ...editing, id } as RateTier : r
-    );
-    const ok = await saveRates(allTiers);
-    if (ok) {
+    setSavingTierId(id);
+    setSaveError('');
+    const tier: RateTier = {
+      id,
+      name: editing.name,
+      color: editing.color,
+      multiplier: editing.multiplier,
+      timeRanges: editing.timeRanges,
+      applicableWeekdays: editing.applicableWeekdays,
+      priority: editing.priority,
+      description: editing.description,
+    };
+    const res = await saveSingleTierStore(tier);
+    setSavingTierId('');
+    if (res.success) {
+      setSingleTierSuccess(id);
       cancelEditing(id);
+    } else {
+      setSaveError(res.message || '保存失败，请检查配置');
     }
   };
 
@@ -127,11 +157,13 @@ export default function RateConfig() {
     const err = validateBeforeSave(allTiers);
     if (err) {
       setSaveError(err);
-      setTimeout(() => setSaveError(''), 4000);
       return;
     }
     setSaveError('');
-    await saveRates(allTiers);
+    const res = await saveRates(allTiers);
+    if (!res.success) {
+      setSaveError(res.message || '删除失败');
+    }
   };
 
   const updateWeekday = (id: string, day: number, selected: boolean) => {
@@ -202,14 +234,15 @@ export default function RateConfig() {
     const err = validateBeforeSave(allTiers);
     if (err) {
       setSaveError(err);
-      setTimeout(() => setSaveError(''), 4000);
       return;
     }
     setSaveError('');
-    const ok = await saveRates(allTiers);
-    if (ok) {
+    const res = await saveSingleTierStore(newRateTier);
+    if (res.success) {
       setShowNewTier(false);
       setNewTier(createEmptyTier());
+    } else {
+      setSaveError(res.message || '创建失败');
     }
   };
 
@@ -236,17 +269,18 @@ export default function RateConfig() {
     if (err) {
       setSaveError(err);
       setSavingAll(false);
-      setTimeout(() => setSaveError(''), 4000);
       return;
     }
-    const ok = await saveRates(finalTiers);
+    const res = await saveRates(finalTiers);
     setSavingAll(false);
-    if (ok) {
+    if (res.success) {
       setEditingMap({});
       setShowNewTier(false);
       setNewTier(createEmptyTier());
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
+    } else {
+      setSaveError(res.message || '保存失败');
     }
   };
 
@@ -634,16 +668,32 @@ export default function RateConfig() {
                       )}
                     </td>
                     <td className="px-6 py-4 align-top">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 items-center">
+                        {singleTierSuccess === id && (
+                          <span className="chip bg-forest-50 text-forest-600 border border-forest-100 animate-fade-up text-xs">
+                            <CheckCircle2 size={10} className="mr-0.5" />
+                            已保存
+                          </span>
+                        )}
                         {isEditing ? (
                           <>
                             <button
                               type="button"
                               onClick={() => saveSingleTier(id)}
+                              disabled={savingTierId === id}
                               className="btn-success !py-1.5 !px-3 text-xs"
                             >
-                              <Save size={12} />
-                              保存本档
+                              {savingTierId === id ? (
+                                <>
+                                  <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                  保存中
+                                </>
+                              ) : (
+                                <>
+                                  <Save size={12} />
+                                  保存本档
+                                </>
+                              )}
                             </button>
                             <button
                               type="button"
